@@ -1,0 +1,148 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container">
+    <a href="/logout">Sair</a>
+    <div class="grafico">
+        <canvas id="graficoPizza"></canvas>
+    </div>
+    <div class="grafico">
+        <canvas id="graficoLinha"></canvas>
+    </div>
+</div>
+<script>
+
+async function carregaPizza() {
+
+    const resposta = await fetch('/api/resumo')
+
+    const dados = await resposta.json()
+
+    let receitas = 0
+    let despesas = 0
+
+    dados.forEach(item=>{ 
+        
+        if(item[0] == "receita"){
+            receitas = item[1]
+        }
+        if(item[0]=="despesa"){
+            despesas = item[1]
+        }
+    
+    })
+
+
+    new Chart(
+        document.getElementById("graficoPizza"),
+        {
+            type:'pie',
+
+            data:{
+                labels:[
+                    'Receitas',
+                    'Despesas'
+                ],
+
+                datasets:[{
+                    data:[
+                        receitas,
+                        despesas
+                    ],
+
+                     backgroundColor:[
+                        '#28a745',
+                        '#dc3545'
+                    ]
+                }]
+            }
+        }
+    )
+}
+
+
+async function carregaLinha(){
+
+    const resposta = await fetch('/api/evolucao')
+
+    const dados = await resposta.json()
+
+    const meses = {
+          "01":"Jan",
+            "02":"Fev",
+            "03":"Mar",
+            "04":"Abr",
+            "05":"Mai",
+            "06":"Jun",
+            "07":"Jul",
+            "08":"Ago",
+            "09":"Set",
+            "10":"Out",
+            "11":"Nov",
+            "12":"Dez"
+        }
+
+
+    dados.forEach(item=>{
+
+        const mes = item[0]
+
+        if(!meses[mes]){
+
+            meses[mes] = {
+                receita:0,
+                despesa:0
+            }
+        }
+
+        if(item[1]=== 'receita'){
+            meses[mes].receita = item[2]
+        }
+
+        if(item[1]=== 'despesa'){
+            meses[mes].despesa = item[2]
+        }
+    })
+
+    const labels = Object.keys(meses)
+
+      const receitas =
+        Object.values(meses)
+        .map(m => m.receita)
+
+    const despesas =
+        Object.values(meses)
+        .map(m => m.despesa)
+
+    new Chart(
+        document.getElementById('graficoLinha'),
+        {
+            type:'line',
+
+            data:{
+                labels:labels,
+
+                datasets:[
+                    {
+
+                      label:'Receitas',
+                        data:receitas,
+                        borderColor:'green'
+                    },
+                    {
+                        label:'Despesas',
+                        data:despesas,
+                        borderColor:'red'
+                    }
+
+            ]
+            }
+        }
+
+    )
+
+}
+
+carregaPizza()
+carregaLinha()
+
+</script>

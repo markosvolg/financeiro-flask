@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Controle Financeiro</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            max-width: 640px;
+            margin: 40px auto;
+            padding: 0 16px;
+            background: #f4f6f8;
+            color: #222;
+        }
+        h1 { font-size: 1.6rem; margin-bottom: 24px; }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.06);
+            margin-bottom: 24px;
+        }
+
+        .campo { display: flex; flex-direction: column; margin-bottom: 12px; }
+        .campo label { font-size: .85rem; color: #555; margin-bottom: 4px; }
+        .campo input {
+            padding: 10px 12px;
+            border: 1px solid #ccd3da;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+        }
+        .campo input:focus { border-color: #3b82f6; }
+
+        .botoes { display: flex; gap: 10px; margin-top: 8px; }
+        .btn {
+            flex: 1;
+            padding: 11px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: .95rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: #fff;
+            transition: opacity .15s;
+        }
+        .btn:disabled { opacity: .55; cursor: wait; }
+        .btn-receita { background: #16a34a; }
+        .btn-despesa { background: #dc2626; }
+        .btn:hover:not(:disabled) { opacity: .9; }
+
+        h2 { font-size: 1.05rem; color: #444; margin: 0 0 12px; }
+
+        #lista { list-style: none; padding: 0; margin: 0; }
+        #lista li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 14px;
+            background: #fff;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 4px solid #ccc;
+            box-shadow: 0 1px 3px rgba(0,0,0,.04);
+        }
+        #lista li.receita { border-left-color: #16a34a; }
+        #lista li.despesa { border-left-color: #dc2626; }
+
+        .info { display: flex; flex-direction: column; }
+        .desc { font-weight: 600; }
+        .tipo { font-size: .78rem; color: #777; text-transform: capitalize; }
+
+        .valor { font-weight: 700; font-variant-numeric: tabular-nums; }
+        .valor.receita { color: #16a34a; }
+        .valor.despesa { color: #dc2626; }
+
+        .vazio { text-align: center; color: #999; padding: 20px 0; font-size: .9rem; }
+        .msg { margin-top: 10px; font-size: .88rem; min-height: 1.2em; }
+        .msg.ok  { color: #16a34a; }
+        .msg.err { color: #dc2626; }
+    </style>
+</head>
+
+<body>
+
+    <h1>Controle Financeiro</h1>
+
+<div class="card">
+    <div class="campo">
+        <label for="descricao">Descrição</label>
+        <input id="descricao" type="text" placeholder="Ex: Salário, Mercado, Uber..." maxlength="120" autocomplete="off">
+    </div>
+
+     <div class="campo">
+        <label for="valor">Valor (R$)</label>
+        <input id="valor" type="number" step="0.01" min="0" placeholder="0,00">
+    </div>
+
+    <div class="campo">
+        <label for="data">Data Movimentação</label>
+        <input id="data" type="text" placeholder="Ex: 2026-11-01" maxlength="20" autocomplete="off">
+    </div>
+
+    <div class="botoes">
+        <button class="btn btn-receita" onclick="salvar('receita', this)">+ Receita</button>
+        <button class="btn btn-despesa" onclick="salvar('despesa', this)">− Despesa</button>
+    </div>
+
+       <div id="msg" class="msg"></div>
+</div>
+
+<div class="card">
+    <h2>Movimentações</h2>
+    <ul id="lista"></ul>
+</div>
+
+
+<!--
+<input id="descricao">
+<input id="valor">
+
+<button onclick="salvar()">
+Salvar
+</button>
+
+<ul id="lista"></ul>-->
+
+<script>
+
+    const $ = id => document.getElementById(id);
+
+    function mostrarMsg(texto, ok = true){
+         const m = $("msg");
+        m.textContent = texto;
+        m.className = "msg " + (ok ? "ok" : "err");
+    setTimeout(() => { m.textContent = ""; }, 3500);
+
+    }
+
+    function formatarReais(v) {
+    return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+
+async function salvar(tipo, botao) {
+
+    const descricao = $("descricao").value.trim();
+    const valor     = parseFloat($("valor").value);
+    const data  = $("data").value.trim();
+
+    if (!descricao) { mostrarMsg("Preencha a descrição.", false); return; }
+    if (!valor || valor <= 0) { mostrarMsg("Informe um valor maior que zero.", false); return;}
+    if (!data) { mostrarMsg("Preencha a Data de movimentação.", false); return; }
+
+    botao.disabled = true;
+
+    try{
+         const resp = await fetch(`/${tipo}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ descricao, valor })
+        });
+
+        //Retorno da mensagem Json
+        const json = await resp.json().catch(() => ({}));
+
+        if(!resp.ok){
+            mostrarMsg(json.erro || json.mensagem || `Erro ${resp.status}`, false);
+            return;
+        }
+        //Fim do tratamento da mensagem Json
+
+          mostrarMsg(json.mensagem || "Salvo com sucesso!");
+        $("descricao").value = "";
+        $("valor").value = "";
+        $("descricao").focus();
+
+        await carregar(); //Recarrega a lista pra incluir o novo item. await porque queremos que termine antes da função salvar retornar.
+
+    }catch(e)
+    {
+         mostrarMsg("Falha de conexão com o servidor.", false);
+        console.error(e);
+
+    }finally {
+        botao.disabled = false;
+    }
+    
+}
+
+async function carregar() {
+
+    const lista = $("lista");
+
+    try{
+        
+        const resp = await fetch("/movimentacoes");
+        const dados = await resp.json();
+
+         if (!dados.length) {
+            lista.innerHTML = '<li class="vazio">Nenhuma movimentação ainda.</li>';
+            return;
+            }
+        // Espera objetos { descricao, valor, tipo }
+        // (mais recentes primeiro)
+         lista.innerHTML = dados.slice().reverse().map(item => {
+            const classe = item.tipo === "receita" ? "receita" : "despesa";
+            const sinal  = item.tipo === "receita" ? "+" : "−";
+            return `
+            <li class="${classe}">
+                    <div class="info">
+                        <span class="desc">${escapeHtml(item.descricao)}</span>
+                        <span class="tipo">${item.tipo}</span>
+                    </div>
+                    <span class="valor ${classe}">${sinal} ${formatarReais(item.valor)}</span>
+                </li>
+            `;
+        }).join("");
+    } catch (e){
+       lista.innerHTML = '<li class="vazio">Erro ao carregar.</li>';
+        console.error(e);
+
+    }
+}
+
+//Segurança substitui caracteres perigosos por "entidades HTML" 
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+}
+
+   /* async function salvar(){
+
+        let dados = {
+            descricao:
+            document
+            .getElementById("descricao")
+            .value,
+
+            valor:
+            document
+            .getElementById("valor")
+            .value
+        }
+
+        await fetch(
+        "/receita",{
+            method:"POST",
+            headers:{
+                "Content-Type":
+                "application/json"
+            },
+            body:JSON.stringify(dados)
+        })
+    
+        carregar()
+
+    }*/
+
+    /*
+    async function carregar(){
+
+    let resposta =
+    await fetch(
+    "/movimentacoes"
+    )
+
+    let dados =
+    await resposta.json()
+
+    let lista =
+    document.getElementById(
+    "lista"
+    )
+
+     lista.innerHTML = ""
+
+        dados.forEach(item=>{
+
+        lista.innerHTML += `
+        <li>
+        ${item[1]}
+        - R$ ${item[2]}
+        </li>
+        `
+    })
+
+}
+
+carregar()*/
+
+carregar();
+
+</script>
+
+</body>
+</html>
