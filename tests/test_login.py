@@ -1,26 +1,15 @@
-import sys
-import os
-
-sys.path.append(
-    os.path.dirname(
-        os.path.dirname(
-            os.path.abspath(__file__)
-        )
-    )
-)
+# tests/test_login.py
 
 
-from app import app
-
-def test_login():
-    cliente = app.test_client()
-
+def test_login(cliente):
     resposta = cliente.post(
         "/login",
         data={
-            "email":"admin@gmail.com",
-            "senha":"123456"
+            "email": "admin@gmail.com",
+            "senha": "123456"
         }
     )
 
-    assert resposta.status_code in [200,302]
+    # Pode retornar 200 (falha no login) ou 302 (sucesso e redirecionamento)
+    assert resposta.status_code in [200, 302]
+

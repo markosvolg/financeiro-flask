@@ -1,46 +1,16 @@
-import sys
-import os
-import pytest
+# tests/test_api.py
 
-sys.path.append(
-    os.path.dirname(
-        os.path.dirname(
-            os.path.abspath(__file__)
-        )
-    )
-)
-
-
-
-from app import create_app
-
-@pytest.fixture
-def cliente():
-    """Cria um cliente de teste usando a fábrica do app"""
-    app = create_app()
-    # Configurações extras para teste (opcional)
-    app.config['TESTING'] = True
-    app.config['WTF_CSRF_ENABLED'] = False # Desabilita CSRF se houver
-    
-    with app.test_client() as cliente:
-        yield cliente
-
-def test_home():
-
+def test_home(cliente):
     resposta = cliente.get("/")
-
     assert resposta.status_code == 200
 
-def test_receita():
-    
+def test_receita(cliente):
     resposta = cliente.post(
-        "/receitas", # Corrigido de /receita para /receitas
+        "/receitas", # Lembre-se que no app.py a rota é /receitas com 's'
         json={
-            "descricao":"Pagamento",
-            "valor":5000,
-            "data":"2025-11-10"
+            "descricao": "Pagamento",
+            "valor": 5000,
+            "data": "2025-11-10"
         }
     )
-
     assert resposta.status_code == 200
-
