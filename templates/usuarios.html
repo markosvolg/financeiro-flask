@@ -3,31 +3,78 @@
 {% block titulo %}Usuários{% endblock %}
 
 {% block conteudo %}
-<div class="row">
+<div class="row mb-4">
     <div class="col-12">
-        <h2 class="mb-4"><i class="fas fa-users text-primary"></i> Usuários Cadastrados</h2>
+        <h2><i class="fas fa-users text-primary"></i> Usuários</h2>
     </div>
 </div>
 
 <div class="row">
     <div class="col-md-12">
-        <div class="card card-primary card-outline">
-            <div class="card-header">
-                <h3 class="card-title">Lista de Usuários</h3>
+        <div class="card card-primary card-outline shadow">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title">Gerenciar Usuários</h3>
+                <!-- Botão de cadastro leva para a página /cadastro -->
+                <a href="/cadastro" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Novo Usuário
+                </a>
             </div>
-            <div class="card-body table-responsive">
-                <table id="tabela-usuarios" class="table table-dark table-hover table-striped">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nome de Usuário</th>
-                            <th>E-mail</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Preenchido via JS -->
-                    </tbody>
-                </table>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="tabela-usuarios" class="table table-hover w-100">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>E-mail</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast de Notificação (Sucesso) -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="toastSucesso" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fas fa-check-circle me-2"></i> Operação realizada com sucesso!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDIÇÃO -->
+<div class="modal fade" id="modalUsuario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title" id="tituloModal">Editar Usuário</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-usuario">
+                    <input type="hidden" id="idUsuario">
+                    <div class="mb-3">
+                        <label>Nome de Usuário</label>
+                        <input type="text" class="form-control" id="nomeUsuario" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>E-mail</label>
+                        <input type="email" class="form-control" id="emailUsuario" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Nova Senha (deixe em branco para não alterar)</label>
+                        <input type="password" class="form-control" id="senhaUsuario">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Salvar Alterações</button>
+                </form>
             </div>
         </div>
     </div>
@@ -36,42 +83,110 @@
 
 {% block scripts %}
 <script>
-    let dataTableUsuarios = null;
+    let modal = null;
+    let toast = null;
+    let dataTable = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        modal = new bootstrap.Modal(document.getElementById('modalUsuario'));
+        toast = new bootstrap.Toast(document.getElementById('toastSucesso'), { delay: 3000 });
+
+        dataTable = $('#tabela-usuarios').DataTable({ 
+            "language": { "url": "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-BR.json" },
+            "order": [],
+            "pageLength": 10
+        });
+
+        carregarUsuarios();
+
+        document.getElementById('modalUsuario').addEventListener('hidden.bs.modal', function () {
+            carregarUsuarios();
+        });
+    });
 
     async function carregarUsuarios() {
         try {
-            const response = await fetch('/api/usuarios');
-            if (response.redirected) {
-                window.location.href = response.url;
-                return;
-            }
+            const res = await fetch('/api/usuarios', { cache: 'no-store' });
+            if (res.redirected) { window.location.href = res.url; return; }
+            if (!res.ok) throw new Error("Erro na API");
 
-            const dados = await response.json();
-            const tbody = document.querySelector('#tabela-usuarios tbody');
-            tbody.innerHTML = '';
+            const dados = await res.json();
+            
+            // Ordena do mais novo para o mais antigo
+            const usuarios = dados.sort((a, b) => b.id - a.id);
 
-            dados.forEach(user => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${user.id}</td>
-                        <td>${user.usuario}</td>
-                        <td>${user.email}</td>
-                    </tr>
-                `;
+            dataTable.clear();
+
+            usuarios.forEach(user => {
+                dataTable.row.add([
+                    user.id,
+                    user.usuario,
+                    user.email,
+                    `<button class="btn btn-sm btn-primary btn-editar" data-id="${user.id}" data-nome="${user.usuario}" data-email="${user.email}"><i class="fas fa-edit"></i></button>
+                     <button class="btn btn-sm btn-danger btn-excluir" data-id="${user.id}"><i class="fas fa-trash"></i></button>`
+                ]);
             });
 
-            if (dataTableUsuarios) {
-                dataTableUsuarios.destroy();
-            }
-            dataTableUsuarios = $('#tabela-usuarios').DataTable({
-                "language": { "url": "https://cdn.datatables.net/plug-ins/1.13.8/i18n/pt-BR.json" }
-            });
+            dataTable.draw();
 
         } catch (error) {
-            console.error("Erro ao carregar usuários:", error);
+            console.error("Erro no carregamento:", error);
         }
     }
 
-    carregarUsuarios();
+    document.querySelector('#tabela-usuarios tbody').addEventListener('click', (e) => {
+        const btnEditar = e.target.closest('.btn-editar');
+        if (btnEditar) {
+            editar(btnEditar.dataset.id, btnEditar.dataset.nome, btnEditar.dataset.email);
+        }
+        const btnExcluir = e.target.closest('.btn-excluir');
+        if (btnExcluir) {
+            excluir(btnExcluir.dataset.id);
+        }
+    });
+
+    function editar(id, nome, email) {
+        document.getElementById('idUsuario').value = id;
+        document.getElementById('nomeUsuario').value = nome;
+        document.getElementById('emailUsuario').value = email;
+        document.getElementById('senhaUsuario').value = '';
+        document.getElementById('tituloModal').innerText = 'Editar Usuário';
+        modal.show();
+    }
+
+    async function excluir(id) {
+        if(confirm("Atenção: Tem certeza que deseja excluir este usuário?")) {
+            await fetch(`/api/usuarios/${id}`, { method: 'DELETE' });
+            await carregarUsuarios();
+            toast.show();
+        }
+    }
+
+    document.getElementById('form-usuario').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('idUsuario').value;
+        
+        const payload = {
+            usuario: document.getElementById('nomeUsuario').value,
+            email: document.getElementById('emailUsuario').value,
+            senha: document.getElementById('senhaUsuario').value
+        };
+
+        try {
+            const response = await fetch(`/api/usuarios/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                document.getElementById('form-usuario').reset();
+                modal.hide(); 
+                toast.show();
+            }
+        } catch (error) {
+            console.error("Erro ao salvar:", error);
+        }
+    });
 </script>
 {% endblock %}

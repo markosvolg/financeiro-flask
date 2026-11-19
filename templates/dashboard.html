@@ -3,6 +3,15 @@
 {% block titulo %}Dashboard{% endblock %}
 
 {% block conteudo %}
+<!-- CSS para corrigir a nitidez da fonte nos cards -->
+<style>
+    .small-box h3 {
+        text-shadow: none !important; /* Remove o tremido */
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+</style>
+
 <div class="row">
     <div class="col-12 mb-4">
         <h2><i class="fas fa-chart-pie text-primary"></i> Visão Geral</h2>
@@ -15,7 +24,8 @@
     <div class="col-lg-4 col-6">
         <div class="small-box text-bg-success shadow">
             <div class="inner">
-                <h3>R$ 15.000</h3> <!-- Aqui você pode colocar a variável Jinja ex: {{ total_receitas }} -->
+                <!-- IDs adicionados para o JS preencher -->
+                <h3 id="total-receitas">R$ 0,00</h3> 
                 <p>Receitas</p>
             </div>
             <i class="small-box-icon fas fa-arrow-up"></i>
@@ -29,7 +39,7 @@
     <div class="col-lg-4 col-6">
         <div class="small-box text-bg-danger shadow">
             <div class="inner">
-                <h3>R$ 400</h3> <!-- {{ total_despesas }} -->
+                <h3 id="total-despesas">R$ 0,00</h3>
                 <p>Despesas</p>
             </div>
             <i class="small-box-icon fas fa-arrow-down"></i>
@@ -43,7 +53,7 @@
     <div class="col-lg-4 col-12">
         <div class="small-box text-bg-primary shadow">
             <div class="inner">
-                <h3>R$ 14.600</h3> <!-- {{ saldo }} -->
+                <h3 id="saldo-atual">R$ 0,00</h3>
                 <p>Saldo Atual</p>
             </div>
             <i class="small-box-icon fas fa-wallet"></i>
@@ -63,7 +73,9 @@
                 <h3 class="card-title"><i class="fas fa-chart-pie me-2"></i> Receitas x Despesas</h3>
             </div>
             <div class="card-body">
-                <canvas id="graficoPizza" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                <div style="position: relative; height: 250px; width: 100%;">
+                    <canvas id="graficoPizza"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -75,7 +87,9 @@
                 <h3 class="card-title"><i class="fas fa-chart-line me-2"></i> Evolução Mensal</h3>
             </div>
             <div class="card-body">
-                <canvas id="graficoLinha" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                <div style="position: relative; height: 250px; width: 100%;">
+                    <canvas id="graficoLinha"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -83,68 +97,165 @@
 {% endblock %}
 
 {% block scripts %}
-<!-- Exemplo de como renderizar os gráficos caso os dados venham do backend -->
 <script>
-    // Aqui você precisará adaptar com os dados reais que o seu backend envia
-    // Estou usando dados estáticos apenas para o visual não ficar vazio
-    
-    // Gráfico de Pizza
-    const ctxPizza = document.getElementById('graficoPizza').getContext('2d');
-    new Chart(ctxPizza, {
-        type: 'doughnut',
-        data: {
-            labels: ['Receitas', 'Despesas'],
-            datasets: [{
-                data: [15000, 400], // Substitua por variáveis do Jinja ex: [{{ resumo[0][1] }}, {{ resumo[1][1] }}]
-                backgroundColor: ['#198754', '#dc3545'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'top', labels: { color: '#fff' } }
-            }
-        }
+   // 1. CONFIGURAÇÃO GLOBAL PARA NITIDEZ DA FONTE
+    // Define uma fonte limpa e o tamanho padrão para todos os gráficos
+    Chart.defaults.font.family = "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+    Chart.defaults.font.size = 13;
+    Chart.defaults.font.weight = '500'; // Peso da fonte ajuda na nitidez
+
+    let chartPizza = null;
+    let chartLinha = null;
+
+    const formatarMoeda = (valor) => Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        inicializarGraficos();
+        await carregarDadosDashboard();
     });
 
-    // Gráfico de Linha
-    const ctxLinha = document.getElementById('graficoLinha').getContext('2d');
-    new Chart(ctxLinha, {
-        type: 'line',
-        data: {
-            labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
-            datasets: [
-                {
-                    label: 'Receitas',
-                    data: [5000, 6000, 5500, 7000, 8000, 15000],
-                    borderColor: '#198754',
-                    backgroundColor: 'rgba(25, 135, 84, 0.2)',
-                    fill: true,
-                    tension: 0.4
-                },
-                {
-                    label: 'Despesas',
-                    data: [3000, 2500, 4000, 3500, 500, 400],
-                    borderColor: '#dc3545',
-                    backgroundColor: 'rgba(220, 53, 69, 0.2)',
-                    fill: true,
-                    tension: 0.4
+    async function carregarDadosDashboard() {
+        try {
+            const resMov = await fetch('/api/movimentacoes', { cache: 'no-store' });
+            if (resMov.redirected) { window.location.href = resMov.url; return; }
+            
+            const movimentacoes = await resMov.json();
+
+            let totalReceitas = 0;
+            let totalDespesas = 0;
+
+            movimentacoes.forEach(item => {
+                if (item.tipo === 'receita') totalReceitas += Number(item.valor);
+                if (item.tipo === 'despesa') totalDespesas += Number(item.valor);
+            });
+
+            const saldo = totalReceitas - totalDespesas;
+
+            document.getElementById('total-receitas').innerText = formatarMoeda(totalReceitas);
+            document.getElementById('total-despesas').innerText = formatarMoeda(totalDespesas);
+            document.getElementById('saldo-atual').innerText = formatarMoeda(saldo);
+
+            chartPizza.data.datasets[0].data = [totalReceitas, totalDespesas];
+            chartPizza.update();
+
+            const resEvo = await fetch('/api/evolucao', { cache: 'no-store' });
+            const evolucao = await resEvo.json(); 
+
+            const mesesNomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            let labelsMeses = [];
+            let dadosReceita = [];
+            let dadosDespesa = [];
+
+            const agrupado = {};
+            
+            evolucao.forEach(row => {
+                const mesNumero = parseInt(row[0]) - 1;
+                const tipo = row[1];
+                const valor = Number(row[2]);
+
+                if (!agrupado[mesNumero]) {
+                    agrupado[mesNumero] = { receita: 0, despesa: 0 };
                 }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { labels: { color: '#fff' } }
-            },
-            scales: {
-                x: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                y: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.1)' } }
-            }
+                agrupado[mesNumero][tipo] = valor;
+            });
+
+            Object.keys(agrupado).sort((a, b) => a - b).forEach(mes => {
+                labelsMeses.push(mesesNomes[mes]);
+                dadosReceita.push(agrupado[mes].receita);
+                dadosDespesa.push(agrupado[mes].despesa);
+            });
+
+            chartLinha.data.labels = labelsMeses;
+            chartLinha.data.datasets[0].data = dadosReceita;
+            chartLinha.data.datasets[1].data = dadosDespesa;
+            chartLinha.update();
+
+        } catch (error) {
+            console.error("Erro ao carregar dados do dashboard:", error);
         }
-    });
+    }
+
+    function inicializarGraficos() {
+        // --- Gráfico de Pizza ---
+        const ctxPizza = document.getElementById('graficoPizza').getContext('2d');
+        chartPizza = new Chart(ctxPizza, {
+            type: 'doughnut',
+            data: {
+                labels: ['Receitas', 'Despesas'],
+                datasets: [{
+                    data: [0, 0],
+                    backgroundColor: ['#198754', '#dc3545'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                devicePixelRatio: window.devicePixelRatio || 2, // FORÇA ALTA RESOLUÇÃO
+                plugins: {
+                    legend: { 
+                        position: 'top', 
+                        labels: { 
+                            color: '#fff',
+                            padding: 20,
+                            usePointStyle: true // Deixa a bolinha da legenda mais bonita e nítida
+                        } 
+                    }
+                }
+            }
+        });
+
+        // --- Gráfico de Linha ---
+        const ctxLinha = document.getElementById('graficoLinha').getContext('2d');
+        chartLinha = new Chart(ctxLinha, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Receitas',
+                        data: [],
+                        borderColor: '#198754',
+                        backgroundColor: 'rgba(25, 135, 84, 0.2)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Despesas',
+                        data: [],
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.2)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                devicePixelRatio: window.devicePixelRatio || 2, // FORÇA ALTA RESOLUÇÃO
+                plugins: {
+                    legend: { 
+                        labels: { 
+                            color: '#fff',
+                            usePointStyle: true
+                        } 
+                    }
+                },
+                scales: {
+                    x: { 
+                        ticks: { color: '#aaa', font: { size: 12 } }, 
+                        grid: { color: 'rgba(255,255,255,0.05)' } 
+                    },
+                    y: { 
+                        ticks: { color: '#aaa', font: { size: 12 } }, 
+                        grid: { color: 'rgba(255,255,255,0.05)' } 
+                    }
+                }
+            }
+        });
+    }
 </script>
 {% endblock %}
