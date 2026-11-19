@@ -215,6 +215,13 @@ def receita():
 
     dados = request.json
 
+    data_movimentacao = dados.get("data")
+
+    if not data_movimentacao:
+        return jsonify({
+        "erro": "data_movimentacao obrigatória"
+        }), 400
+
     conn = conectar()
     cursor = conn.cursor()
 
@@ -226,7 +233,7 @@ def receita():
     (dados["descricao"],
          dados["valor"],
          "receita",
-         dados["data"]
+         dados[data_movimentacao]
          ))
     conn.commit()
     conn.close()
