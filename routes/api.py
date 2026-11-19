@@ -98,7 +98,7 @@ def api_criar_receita():
 
    
 
-@api_bp.route("/despesa", methods=["POST"])  
+@api_bp.route("/despesas", methods=["POST"])  
 @login_required 
 def api_criar_despesa():
     dados = request.get_json(silent=True) or {}
