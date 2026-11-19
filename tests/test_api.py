@@ -29,7 +29,7 @@ def test_receita():
         json={
             "descricao":"Pagamento",
             "valor":5000,
-            "data_movimentacao":"2025-11-10"
+            "data":"2025-11-10"
         }
     )
 
