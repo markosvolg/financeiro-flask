@@ -233,7 +233,7 @@ def receita():
     (dados["descricao"],
          dados["valor"],
          "receita",
-         dados[data_movimentacao]
+         data_movimentacao
          ))
     conn.commit()
     conn.close()
