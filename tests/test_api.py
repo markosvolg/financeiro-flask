@@ -1,5 +1,6 @@
 import sys
 import os
+import pytest
 
 sys.path.append(
     os.path.dirname(
@@ -11,21 +12,29 @@ sys.path.append(
 
 
 
-from app import app
+from app import create_app
+
+@pytest.fixture
+def cliente():
+    """Cria um cliente de teste usando a fábrica do app"""
+    app = create_app()
+    # Configurações extras para teste (opcional)
+    app.config['TESTING'] = True
+    app.config['WTF_CSRF_ENABLED'] = False # Desabilita CSRF se houver
+    
+    with app.test_client() as cliente:
+        yield cliente
 
 def test_home():
-
-    cliente = app.test_client()
 
     resposta = cliente.get("/")
 
     assert resposta.status_code == 200
 
 def test_receita():
-    cliente = app.test_client()
-
+    
     resposta = cliente.post(
-        "/receita",
+        "/receitas", # Corrigido de /receita para /receitas
         json={
             "descricao":"Pagamento",
             "valor":5000,
