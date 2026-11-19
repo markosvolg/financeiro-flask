@@ -1,80 +1,242 @@
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% extends "base.html" %}
+
+{% block titulo %}
+Dashboard Financeiro
+{% endblock %}
+
+{% block conteudo %}
 
 
-<link rel ="stylesheet" href="/static/style.css"></link>
+
+
+<div class="content-wrapper">
+
+<section class="content pt-4">
+    <div class="container-fluid"></div>
+
 <div class="container">
 
-    <a href="/logout">Sair</a>
-    <div class="graficos">
-        <div class="grafico">
-            <canvas id="graficoPizza"></canvas>
-        </div>
-    </div>
+<div class="row">
 
-    <div class="grafico">
-        <canvas id="graficoLinha"></canvas>
-    </div>
-    </div>
+<div class="col-md-4">
+
+<div class="small-box bg-success">
+
+<div class="inner">
+
+<h4 id="receitas">
+0
+</h4>
+
+<p>Receitas</p>
+
 </div>
+
+<div class="icon">
+
+<i class="fas fa-coins"></i>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-lg-4">
+
+<div class="small-box bg-danger">
+
+<div class="inner">
+
+<h4 id="despesas">
+0
+</h4>
+
+<p>Despesas</p>
+
+</div>
+
+<div class="icon">
+
+<i class="fas fa-credit-card"></i>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-lg-4">
+
+<div class="small-box bg-primary">
+
+<div class="inner">
+
+<h3 id="saldo">
+0
+</h3>
+
+<p>Saldo</p>
+
+</div>
+
+<div class="icon">
+
+<i class="fas fa-wallet"></i>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+<div class="row">
+
+<div class="col-md-6">
+
+<div class="card">
+
+<div class="card-header">
+
+<h3 class="card-title">
+
+Receitas x Despesas
+
+</h3>
+
+</div>
+
+<div class="card-body" style="height: 300px;">
+
+<canvas id="graficoPizza"></canvas>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-6">
+
+<div class="card">
+
+<div class="card-header">
+
+<h3 class="card-title">
+
+Evolução Mensal
+
+</h3>
+
+</div>
+
+<div class="card-body" style="height: 300px;">
+
+<canvas id="graficoLinha"></canvas>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+</div>
+
 <script>
-    
 
-async function carregaPizza() {
+async function carregaPizza(){
 
-    const resposta = await fetch('/api/resumo')
+    const resposta =
+        await fetch('/api/resumo')
 
-    const dados = await resposta.json()
+    const dados =
+        await resposta.json()
 
     let receitas = 0
     let despesas = 0
 
-    dados.forEach(item=>{ 
-        
+    dados.forEach(item => {
+
         if(item[0] == "receita"){
             receitas = item[1]
         }
-        if(item[0]=="despesa"){
+
+        if(item[0] == "despesa"){
             despesas = item[1]
         }
-    
+
     })
 
+    document.getElementById("receitas")
+    .innerText =
+    "R$ " + receitas
 
+    document.getElementById("despesas")
+    .innerText =
+    "R$ " + despesas
+
+    document.getElementById("saldo")
+    .innerText =
+    "R$ " + (receitas - despesas)
+
+     // Configuração do Gráfico de Pizza (Doughnut)
     new Chart(
         document.getElementById("graficoPizza"),
         {
-            type:'pie',
+            type:'doughnut',
+            
 
             data:{
-                labels:[
-                    'Receitas',
-                    'Despesas'
-                ],
+                labels:['Receitas','Despesas'],
 
                 datasets:[{
                     data:[
                         receitas,
                         despesas
                     ],
+                    backgroundColor:['#28a745', '#dc3545'],
+                    borderColor: '#2b3035',// Cor do fundo do card para dar espaçamento
+                    borderWidth: 2
 
-                     backgroundColor:[
-                        '#28a745',
-                        '#dc3545'
-                    ]
                 }]
+            },
+            options:{
+            maintainAspectRatio:false,
+            responsive:true,
+            plugins: {
+                legend:{
+                    labels:{
+                        color:'#e0e0e0'// Cor do texto da legenda
+                    }
+                }
             }
-        }
-    )
-}
+            }
 
+            
+        }
+        
+    )
+
+}
 
 async function carregaLinha(){
 
-    const resposta = await fetch('/api/evolucao')
+    
 
-    const dados = await resposta.json()
+    const resposta =
+        await fetch('/api/evolucao')
 
-    const meses = {
+    const dados =
+        await resposta.json()
+
+         const meses = {
           "01":"Jan",
             "02":"Fev",
             "03":"Mar",
@@ -88,41 +250,49 @@ async function carregaLinha(){
             "11":"Nov",
             "12":"Dez"
         }
+    
 
+    const dadosMeses = {}
 
     dados.forEach(item=>{
 
         const mes = item[0]
 
-        if(!meses[mes]){
+        if(!dadosMeses[mes]){
 
-            meses[mes] = {
+            dadosMeses[mes] = {
                 receita:0,
                 despesa:0
             }
         }
 
-        if(item[1]=== 'receita'){
-            meses[mes].receita = item[2]
+        if(item[1] == 'receita'){
+            dadosMeses[mes].receita =
+                item[2]
         }
 
-        if(item[1]=== 'despesa'){
-            meses[mes].despesa = item[2]
+        if(item[1] == 'despesa'){
+            dadosMeses[mes].despesa =
+                item[2]
         }
+
     })
 
-    const labels = Object.keys(meses)
+    const labels =
+        Object.keys(dadosMeses)
 
-      const receitas =
-        Object.values(meses)
+    const receitas =
+        Object.values(dadosMeses)
         .map(m => m.receita)
 
     const despesas =
-        Object.values(meses)
+        Object.values(dadosMeses)
         .map(m => m.despesa)
 
     new Chart(
-        document.getElementById('graficoLinha'),
+        document.getElementById(
+            "graficoLinha"
+        ),
         {
             type:'line',
 
@@ -131,21 +301,54 @@ async function carregaLinha(){
 
                 datasets:[
                     {
-
-                      label:'Receitas',
+                        label:'Receitas',
                         data:receitas,
-                        borderColor:'green'
+                        borderColor: '#28a745',
+                        backgroundColor: '#28a745',
+                        tension:0.4,
+                        pointBackgroundColor: '#28a745'
                     },
                     {
                         label:'Despesas',
                         data:despesas,
-                        borderColor:'red'
+                        borderColor: '#dc3545',
+                        backgroundColor: '#dc3545',
+                        tension:0.4,
+                        pointBackgroundColor: '#dc3545'
                     }
-
-            ]
+                ]
+            },
+            options:{
+            maintainAspectRatio:false,
+            responsive:true,
+            color: '#e0e0e0',
+             plugins: {
+                    legend: {
+                        labels: {
+                            color: '#e0e0e0'
+                        }
+                    }
+                },
+                 scales: {
+                    x: {
+                        ticks: {
+                            color: '#e0e0e0' // Cor dos números/textos do Eixo X
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)' // Linhas de grade quase invisíveis
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: '#e0e0e0' // Cor dos números/textos do Eixo Y
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)' // Linhas de grade sutis
+                             }
+                        }
+                }
             }
         }
-
     )
 
 }
@@ -154,3 +357,5 @@ carregaPizza()
 carregaLinha()
 
 </script>
+
+{% endblock %}

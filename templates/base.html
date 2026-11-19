@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>{% block titulo %}{% endblock %}</title>
+
+    <link rel="stylesheet"
+    href="{{ url_for('static',
+    filename='adminlte/plugins/fontawesome-free/css/all.min.css') }}">
+
+    <link rel="stylesheet"
+    href="{{ url_for('static',
+    filename='adminlte/dist/css/adminlte.min.css') }}">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="stylesheet" href="/static/styleadminlte.css">
+
+    <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+</head>
+<body class="hold-transition sidebar-mini layout-fixed dark-mode">
+<!--<body class="layout-fixed sidebar-expand-lg bg-body-tertiary">-->
+
+<div class="app-wrapper">
+    <aside class="main-sidebar sidebar-dark elevation-4">
+
+    <a href="/dashboard" class="brand-link">
+        <i class="fas fa-wallet brand-image"></i>
+
+        <span class="brand-text font-weight-light">Financeiro</span>
+
+    </a>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+
+        <nav class="mt-3">
+
+            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+
+                <!-- Dashboard -->
+                <li class="nav-item">
+
+                    <a href="/dashboard" class="nav-link {% if request.path.startswith('/dashboard') %}active{% endif %}">
+
+                       <i class="nav-icon fas fa-chart-line"></i>
+
+                        <p>Dashboard</p>
+
+                    </a>
+
+                </li>
+                    <!-- Receitas -->
+                <li class="nav-item">
+
+                    <a href="/receitas" class="nav-link {% if request.path.startswith('/receitas') %}active{% endif %}">
+
+                       <i class="nav-icon fas fa-money-bill-wave"></i>
+
+                        <p>Receitas</p>
+
+                    </a>
+
+                </li>
+                    <!-- Despesas -->
+                <li class="nav-item">
+
+                    <a href="/despesas" class="nav-link {% if request.path.startswith('/despesas') %}active{% endif %}">
+
+                       <i class="nav-icon fas fa-credit-card"></i>
+
+                        <p>Despesas</p>
+
+                    </a>
+
+                </li>
+                    <!-- Usuários -->
+                <li class="nav-item">
+
+                    <a href="/cadastro" class="nav-link {% if request.path.startswith('/cadastro') %}active{% endif %}">
+
+                       <i class="nav-icon fas fa-user"></i>
+
+                        <p>Usuários</p>
+
+                    </a>
+
+                </li>
+                    <!-- Sair (Empurrado para o final da tela)-->
+                <li class="nav-item mt-auto "> <a href="/logout" class="nav-link text-danger">
+
+                       <i class="nav-icon fas fa-sign-out-alt"></i>
+
+                        <p>Sair</p>
+
+                    </a>
+
+                </li>
+
+            </ul>
+
+        </nav>
+
+    </div>
+
+</aside>
+
+    {% block conteudo %}
+    {% endblock %}
+
+</div>
+
+<script
+src="{{ url_for('static',
+filename='adminlte/plugins/jquery/jquery.min.js') }}">
+</script>
+
+<script src="{{ url_for(
+'static',
+filename='adminlte/dist/js/adminlte.min.js'
+) }}"></script>
+
+</body>
+
+</html>
