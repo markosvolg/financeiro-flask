@@ -1,0 +1,19 @@
+# Ambiente virtual
+.venv/
+
+# VS Code
+.vscode/
+
+# Banco local
+financeiro.db
+
+# Cache Python
+__pycache__/
+
+*.pyc
+
+# Pytest
+.pytest_cache/
+
+# Variáveis ambiente
+.env

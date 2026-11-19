@@ -1,15 +1,23 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+
+<link rel ="stylesheet" href="/static/style.css"></link>
 <div class="container">
+
     <a href="/logout">Sair</a>
-    <div class="grafico">
-        <canvas id="graficoPizza"></canvas>
+    <div class="graficos">
+        <div class="grafico">
+            <canvas id="graficoPizza"></canvas>
+        </div>
     </div>
+
     <div class="grafico">
         <canvas id="graficoLinha"></canvas>
     </div>
+    </div>
 </div>
 <script>
+    
 
 async function carregaPizza() {
 
