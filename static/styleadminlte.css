@@ -168,3 +168,16 @@ body, .content-wrapper {
 .nav-sidebar .nav-link.text-danger:hover .nav-icon {
     color: #ef4444 !important;
 }
+
+.content-wrapper{
+
+    margin-left: 250px !important;
+
+    background:#2c3340 !important;
+
+    min-height:100vh;
+}
+.content-header{
+
+    padding:20px;
+}

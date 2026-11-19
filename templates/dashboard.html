@@ -1,361 +1,150 @@
 {% extends "base.html" %}
 
-{% block titulo %}
-Dashboard Financeiro
-{% endblock %}
+{% block titulo %}Dashboard{% endblock %}
 
 {% block conteudo %}
-
-
-
-
-<div class="content-wrapper">
-
-<section class="content pt-4">
-    <div class="container-fluid"></div>
-
-<div class="container">
-
 <div class="row">
-
-<div class="col-md-4">
-
-<div class="small-box bg-success">
-
-<div class="inner">
-
-<h4 id="receitas">
-0
-</h4>
-
-<p>Receitas</p>
-
+    <div class="col-12 mb-4">
+        <h2><i class="fas fa-chart-pie text-primary"></i> Visão Geral</h2>
+    </div>
 </div>
 
-<div class="icon">
-
-<i class="fas fa-coins"></i>
-
-</div>
-
-</div>
-
-</div>
-
-<div class="col-lg-4">
-
-<div class="small-box bg-danger">
-
-<div class="inner">
-
-<h4 id="despesas">
-0
-</h4>
-
-<p>Despesas</p>
-
-</div>
-
-<div class="icon">
-
-<i class="fas fa-credit-card"></i>
-
-</div>
-
-</div>
-
-</div>
-
-<div class="col-lg-4">
-
-<div class="small-box bg-primary">
-
-<div class="inner">
-
-<h3 id="saldo">
-0
-</h3>
-
-<p>Saldo</p>
-
-</div>
-
-<div class="icon">
-
-<i class="fas fa-wallet"></i>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
+<!-- Cards de Resumo (Small Boxes) -->
 <div class="row">
+    <!-- Receitas -->
+    <div class="col-lg-4 col-6">
+        <div class="small-box text-bg-success shadow">
+            <div class="inner">
+                <h3>R$ 15.000</h3> <!-- Aqui você pode colocar a variável Jinja ex: {{ total_receitas }} -->
+                <p>Receitas</p>
+            </div>
+            <i class="small-box-icon fas fa-arrow-up"></i>
+            <a href="/receitas" class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover">
+                Ver detalhes <i class="fas fa-arrow-circle-right"></i>
+            </a>
+        </div>
+    </div>
 
-<div class="col-md-6">
+    <!-- Despesas -->
+    <div class="col-lg-4 col-6">
+        <div class="small-box text-bg-danger shadow">
+            <div class="inner">
+                <h3>R$ 400</h3> <!-- {{ total_despesas }} -->
+                <p>Despesas</p>
+            </div>
+            <i class="small-box-icon fas fa-arrow-down"></i>
+            <a href="/despesas" class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover">
+                Ver detalhes <i class="fas fa-arrow-circle-right"></i>
+            </a>
+        </div>
+    </div>
 
-<div class="card">
-
-<div class="card-header">
-
-<h3 class="card-title">
-
-Receitas x Despesas
-
-</h3>
-
+    <!-- Saldo -->
+    <div class="col-lg-4 col-12">
+        <div class="small-box text-bg-primary shadow">
+            <div class="inner">
+                <h3>R$ 14.600</h3> <!-- {{ saldo }} -->
+                <p>Saldo Atual</p>
+            </div>
+            <i class="small-box-icon fas fa-wallet"></i>
+            <a href="#" class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover">
+                Mais informações <i class="fas fa-arrow-circle-right"></i>
+            </a>
+        </div>
+    </div>
 </div>
 
-<div class="card-body" style="height: 300px;">
+<!-- Gráficos -->
+<div class="row mt-4">
+    <!-- Gráfico de Pizza -->
+    <div class="col-md-6">
+        <div class="card card-primary card-outline shadow">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-chart-pie me-2"></i> Receitas x Despesas</h3>
+            </div>
+            <div class="card-body">
+                <canvas id="graficoPizza" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+            </div>
+        </div>
+    </div>
 
-<canvas id="graficoPizza"></canvas>
-
+    <!-- Gráfico de Linha -->
+    <div class="col-md-6">
+        <div class="card card-success card-outline shadow">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-chart-line me-2"></i> Evolução Mensal</h3>
+            </div>
+            <div class="card-body">
+                <canvas id="graficoLinha" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+            </div>
+        </div>
+    </div>
 </div>
+{% endblock %}
 
-</div>
-
-</div>
-
-<div class="col-md-6">
-
-<div class="card">
-
-<div class="card-header">
-
-<h3 class="card-title">
-
-Evolução Mensal
-
-</h3>
-
-</div>
-
-<div class="card-body" style="height: 300px;">
-
-<canvas id="graficoLinha"></canvas>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</section>
-
-</div>
-
+{% block scripts %}
+<!-- Exemplo de como renderizar os gráficos caso os dados venham do backend -->
 <script>
-
-async function carregaPizza(){
-
-    const resposta =
-        await fetch('/api/resumo')
-
-    const dados =
-        await resposta.json()
-
-    let receitas = 0
-    let despesas = 0
-
-    dados.forEach(item => {
-
-        if(item[0] == "receita"){
-            receitas = item[1]
-        }
-
-        if(item[0] == "despesa"){
-            despesas = item[1]
-        }
-
-    })
-
-    document.getElementById("receitas")
-    .innerText =
-    "R$ " + receitas
-
-    document.getElementById("despesas")
-    .innerText =
-    "R$ " + despesas
-
-    document.getElementById("saldo")
-    .innerText =
-    "R$ " + (receitas - despesas)
-
-     // Configuração do Gráfico de Pizza (Doughnut)
-    new Chart(
-        document.getElementById("graficoPizza"),
-        {
-            type:'doughnut',
-            
-
-            data:{
-                labels:['Receitas','Despesas'],
-
-                datasets:[{
-                    data:[
-                        receitas,
-                        despesas
-                    ],
-                    backgroundColor:['#28a745', '#dc3545'],
-                    borderColor: '#2b3035',// Cor do fundo do card para dar espaçamento
-                    borderWidth: 2
-
-                }]
-            },
-            options:{
-            maintainAspectRatio:false,
-            responsive:true,
+    // Aqui você precisará adaptar com os dados reais que o seu backend envia
+    // Estou usando dados estáticos apenas para o visual não ficar vazio
+    
+    // Gráfico de Pizza
+    const ctxPizza = document.getElementById('graficoPizza').getContext('2d');
+    new Chart(ctxPizza, {
+        type: 'doughnut',
+        data: {
+            labels: ['Receitas', 'Despesas'],
+            datasets: [{
+                data: [15000, 400], // Substitua por variáveis do Jinja ex: [{{ resumo[0][1] }}, {{ resumo[1][1] }}]
+                backgroundColor: ['#198754', '#dc3545'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
             plugins: {
-                legend:{
-                    labels:{
-                        color:'#e0e0e0'// Cor do texto da legenda
-                    }
-                }
-            }
-            }
-
-            
-        }
-        
-    )
-
-}
-
-async function carregaLinha(){
-
-    
-
-    const resposta =
-        await fetch('/api/evolucao')
-
-    const dados =
-        await resposta.json()
-
-         const meses = {
-          "01":"Jan",
-            "02":"Fev",
-            "03":"Mar",
-            "04":"Abr",
-            "05":"Mai",
-            "06":"Jun",
-            "07":"Jul",
-            "08":"Ago",
-            "09":"Set",
-            "10":"Out",
-            "11":"Nov",
-            "12":"Dez"
-        }
-    
-
-    const dadosMeses = {}
-
-    dados.forEach(item=>{
-
-        const mes = item[0]
-
-        if(!dadosMeses[mes]){
-
-            dadosMeses[mes] = {
-                receita:0,
-                despesa:0
+                legend: { position: 'top', labels: { color: '#fff' } }
             }
         }
+    });
 
-        if(item[1] == 'receita'){
-            dadosMeses[mes].receita =
-                item[2]
-        }
-
-        if(item[1] == 'despesa'){
-            dadosMeses[mes].despesa =
-                item[2]
-        }
-
-    })
-
-    const labels =
-        Object.keys(dadosMeses)
-
-    const receitas =
-        Object.values(dadosMeses)
-        .map(m => m.receita)
-
-    const despesas =
-        Object.values(dadosMeses)
-        .map(m => m.despesa)
-
-    new Chart(
-        document.getElementById(
-            "graficoLinha"
-        ),
-        {
-            type:'line',
-
-            data:{
-                labels:labels,
-
-                datasets:[
-                    {
-                        label:'Receitas',
-                        data:receitas,
-                        borderColor: '#28a745',
-                        backgroundColor: '#28a745',
-                        tension:0.4,
-                        pointBackgroundColor: '#28a745'
-                    },
-                    {
-                        label:'Despesas',
-                        data:despesas,
-                        borderColor: '#dc3545',
-                        backgroundColor: '#dc3545',
-                        tension:0.4,
-                        pointBackgroundColor: '#dc3545'
-                    }
-                ]
-            },
-            options:{
-            maintainAspectRatio:false,
-            responsive:true,
-            color: '#e0e0e0',
-             plugins: {
-                    legend: {
-                        labels: {
-                            color: '#e0e0e0'
-                        }
-                    }
+    // Gráfico de Linha
+    const ctxLinha = document.getElementById('graficoLinha').getContext('2d');
+    new Chart(ctxLinha, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+            datasets: [
+                {
+                    label: 'Receitas',
+                    data: [5000, 6000, 5500, 7000, 8000, 15000],
+                    borderColor: '#198754',
+                    backgroundColor: 'rgba(25, 135, 84, 0.2)',
+                    fill: true,
+                    tension: 0.4
                 },
-                 scales: {
-                    x: {
-                        ticks: {
-                            color: '#e0e0e0' // Cor dos números/textos do Eixo X
-                        },
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.05)' // Linhas de grade quase invisíveis
-                        }
-                    },
-                    y: {
-                        ticks: {
-                            color: '#e0e0e0' // Cor dos números/textos do Eixo Y
-                        },
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.05)' // Linhas de grade sutis
-                             }
-                        }
+                {
+                    label: 'Despesas',
+                    data: [3000, 2500, 4000, 3500, 500, 400],
+                    borderColor: '#dc3545',
+                    backgroundColor: 'rgba(220, 53, 69, 0.2)',
+                    fill: true,
+                    tension: 0.4
                 }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { labels: { color: '#fff' } }
+            },
+            scales: {
+                x: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                y: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.1)' } }
             }
         }
-    )
-
-}
-
-carregaPizza()
-carregaLinha()
-
+    });
 </script>
-
 {% endblock %}
